@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - include:
+      file: data/V1__ddl_create_table_position.sql
+      relativeToChangelogFile: true
+  - include:
+      file: data/V2__ddl_create_table_employee.sql
+      relativeToChangelogFile: true
+  - include:
+      file: data/V3__dml_insert_position.sql
+      relativeToChangelogFile: true
