@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Repository
@@ -28,7 +29,17 @@ public class EmployeeDAOImpl implements EmployeeDAO {
 
     @Override
     public Page<Employee> getListForPagination(TableRequest tableReq, HttpServletRequest httpReq) {
+        String sortBy = tableReq.getSortBy() != null ?
+                tableReq.getSortBy().replace("-", "") : "";
+        String orderBy = tableReq.getSortBy() != null ?
+                !tableReq.getSortBy().contains("-") ? "ASC" : "DESC"
+                : "";
         String hql = "FROM Employee e WHERE e.isDelete = 0";
+        if (!sortBy.isEmpty()) {
+            hql += " ORDER BY " + sortBy + " " + orderBy;
+        }
+
+        log.info(hql);
 
         List<Employee> employeeList = entityManager.createQuery(hql, Employee.class)
                 .setFirstResult((tableReq.getPage() - 1) * tableReq.getSize())
@@ -59,6 +70,11 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     @Override
     @Transactional
     public Employee insert(Employee employee) {
+        Employee currEmployee = getByIdNumber(employee.getIdNumber());
+        if (currEmployee != null) {
+            throw new ApplicationException(null, "NIP already used", HttpStatus.BAD_REQUEST);
+        }
+
         String sql = """
                 INSERT INTO t2_employee (name, birth_date, position_id, id_number, gender, is_delete)
                 VALUES (:name, :birthDate, :positionId, :idNumber, :gender, 0) RETURNING id
@@ -78,6 +94,14 @@ public class EmployeeDAOImpl implements EmployeeDAO {
     @Transactional
     public Employee update(Employee employee) {
         Employee currEmployee = getById(employee.getId());
+        log.info(employee.getIdNumber().toString());
+        log.info(currEmployee.getIdNumber().toString());
+        if (!Objects.equals(employee.getIdNumber(), currEmployee.getIdNumber())) {
+            Employee employeeIdNumber = getByIdNumber(employee.getIdNumber());
+            if (employeeIdNumber != null) {
+                throw new ApplicationException(null, "NIP already used", HttpStatus.BAD_REQUEST);
+            }
+        }
 
         if (currEmployee == null) throw new ApplicationException(null, "Employee not found", HttpStatus.NOT_FOUND);
 
@@ -143,5 +167,17 @@ public class EmployeeDAOImpl implements EmployeeDAO {
         String hql = "SELECT COUNT(e) FROM Employee e WHERE e.isDelete = 0";
         TypedQuery<Long> query = entityManager.createQuery(hql, Long.class);
         return query.getSingleResult();
+    }
+
+    private Employee getByIdNumber(Integer idNumber) {
+        String hql = "FROM Employee e WHERE e.idNumber = :idNumber";
+        TypedQuery<Employee> query = entityManager.createQuery(hql, Employee.class);
+        query.setParameter("idNumber", idNumber);
+
+        try {
+            return query.getSingleResult();
+        }catch (NoResultException e){
+            return null;
+        }
     }
 }

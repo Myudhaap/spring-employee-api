@@ -34,3 +34,14 @@ BEGIN
             ADD CONSTRAINT chk_employee_gender CHECK (t2_employee.gender IN (1, 2));
     END IF;
 END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.check_constraints
+        WHERE constraint_name = 'uc_t2_employee_id_number'
+    ) THEN
+        ALTER TABLE t2_employee
+            ADD CONSTRAINT uc_t2_employee_id_number UNIQUE (id_number);
+    END IF;
+END $$;

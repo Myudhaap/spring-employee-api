@@ -12,6 +12,7 @@ import lombok.Setter;
 public class TableRequest {
     private Integer page;
     private Integer size;
+    private String sortBy;
 
     public Integer getPage() {
         return page != null && page > 0 ? page : 1;

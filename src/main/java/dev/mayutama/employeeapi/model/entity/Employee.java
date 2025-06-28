@@ -26,7 +26,7 @@ public class Employee {
     @JoinColumn(name = "POSITION_ID", nullable = false)
     private Position position;
 
-    @Column(name = "ID_NUMBER", nullable = false)
+    @Column(name = "ID_NUMBER", nullable = false, unique = true)
     private Integer idNumber;
 
     @Column(name = "GENDER", nullable = false)
